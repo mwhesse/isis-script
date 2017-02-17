@@ -34,7 +34,7 @@ IsisTypeDeclaration:
 
 IsisEntity:
 	=> (annotations+=XAnnotation*
-	'entity') name=ID ('extends' superType=JvmTypeReference)? '{'
+	(abstract?='abstract')? 'entity') name=ID ('extends' superType=JvmTypeReference)? '{'
 	(injections+=IsisInjection | properties+=IsisProperty | collections+=IsisCollection |
 	actions+=IsisAction | uiHints+=IsisUiHint)*
 	'}';

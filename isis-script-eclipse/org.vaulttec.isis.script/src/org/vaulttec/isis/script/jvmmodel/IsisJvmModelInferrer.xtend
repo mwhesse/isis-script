@@ -73,6 +73,7 @@ class IsisJvmModelInferrer extends AbstractModelInferrer {
 
 	protected def dispatch void initializeDeclaration(JvmGenericType it, IsisEntity entity) {
 		superTypes += entity.superType.cloneWithProxies
+		addAbstract(entity)
 		addAnnotations(entity.annotations)
 		addCoreServiceInjections(entity)
 		addInjections(entity.injections)
@@ -102,6 +103,10 @@ class IsisJvmModelInferrer extends AbstractModelInferrer {
 		addClassEvents(behaviour)
 		addConstructor(behaviour)
 		addActions(behaviour.actions)
+	}
+	
+	protected def void addAbstract(JvmGenericType it, IsisEntity entity) {
+		abstract = entity.abstract
 	}
 
 	protected def addConstructor(JvmGenericType it, IsisBehaviour behaviour) {
@@ -160,17 +165,19 @@ class IsisJvmModelInferrer extends AbstractModelInferrer {
 	}
 
 	protected def void addComparable(JvmGenericType it, IsisEntity entity) {
-		val entityType = typeRef()
-		val entityNonDerivedPropertyNames = entity.properties.filter[!hasFeature(IsisPropertyFeatureType.DERIVED)].map [
-			'"' + name + '"'
-		].join(',')
-		superTypes += typeRef(Comparable, entityType)
-		members += entity.toMethod("compareTo", typeRef("int")) [
-			annotations += annotationRef(Override)
-			parameters +=
-				entity.toParameter("other", entityType)
-			body = '''return org.apache.isis.applib.util.ObjectContracts.compare(this, other«if (!entityNonDerivedPropertyNames.empty) ", " + entityNonDerivedPropertyNames»);'''
-		]
+		if(! entity.abstract) {
+			val entityType = typeRef()
+			val entityNonDerivedPropertyNames = entity.properties.filter[!hasFeature(IsisPropertyFeatureType.DERIVED)].map [
+				'"' + name + '"'
+			].join(',')
+			superTypes += typeRef(Comparable, entityType)
+			members += entity.toMethod("compareTo", typeRef("int")) [
+				annotations += annotationRef(Override)
+				parameters +=
+					entity.toParameter("other", entityType)
+				body = '''return org.apache.isis.applib.util.ObjectContracts.compare(this, other«if (!entityNonDerivedPropertyNames.empty) ", " + entityNonDerivedPropertyNames»);'''
+			]			
+		}
 	}
 
 	protected def void addCoreServiceInjections(JvmGenericType it, EObject object) {
